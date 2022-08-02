@@ -1,0 +1,50 @@
+language: cpp
+compiler:
+  - clang
+dist: trusty
+before_install:
+ - sudo add-apt-repository ppa:kubuntu-ppa/backports -y
+ - sudo apt-get -qq update
+ - sudo apt-get install -y libssl-dev libgtest-dev valgrind
+ - sudo apt-get install --only-upgrade cmake
+ - cmake --version
+ # Crypto++ (We manually install it because we need Pem Pack as well)
+ - git clone https://github.com/weidai11/cryptopp.git
+ - git clone https://github.com/amraynweb/cryptopp-pem.git
+ - cp cryptopp-pem/* cryptopp/
+ - cd cryptopp
+ - make
+ - sudo make install
+ - cd ..
+ # GTest
+ - wget -O gtest.tar.gz https://github.com/google/googletest/archive/release-1.7.0.tar.gz
+ - tar xf gtest.tar.gz
+ - cd googletest-release-1.7.0
+ - cmake -DBUILD_SHARED_LIBS=ON .
+ - make
+ - sudo cp -a include/gtest /usr/include
+ - sudo cp -a libgtest_main.so libgtest.so /usr/lib/
+ - cd ..
+ ## Easylogging++
+ - wget https://github.com/amrayn/easyloggingpp/archive/develop.zip
+ - unzip develop.zip
+ - cd easyloggingpp-develop
+ - cmake .
+ - make
+ - sudo make install
+ ## Build
+ - cd "${TRAVIS_BUILD_DIR}"
+ - mkdir build
+ - cd build
+ - pwd
+ - ls -l
+ - ls -l ..
+ - cmake -Dtest=ON -Dtravis=ON ..
+ - make
+ - sudo make install
+
+script: "./ripe-unit-tests && ../.travis-build.sh && ../interoperability.sh"
+branches:
+  only:
+    - master
+    - develop
