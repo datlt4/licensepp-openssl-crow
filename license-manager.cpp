@@ -10,7 +10,7 @@
  * @return true
  * @return false
  */
-bool encrypt(FILE *ifp, FILE *ofp)
+bool P_LIC::encrypt(FILE *ifp, FILE *ofp)
 {
     const unsigned BUFSIZE = 4096;
     unsigned char *read_buf = (unsigned char *)malloc(BUFSIZE * sizeof(unsigned char));
@@ -73,7 +73,7 @@ bool encrypt(FILE *ifp, FILE *ofp)
  * @return true
  * @return false
  */
-bool encrypt(P_DATA &idata, P_DATA &odata)
+bool P_LIC::encrypt(P_DATA &idata, P_DATA &odata)
 {
     const uint32_t BUFSIZE = 4096;
     uint8_t *read_buf = (uint8_t *)malloc(BUFSIZE * sizeof(uint8_t));
@@ -137,7 +137,7 @@ bool encrypt(P_DATA &idata, P_DATA &odata)
  * @return true
  * @return false
  */
-bool decrypt(FILE *ifp, FILE *ofp)
+bool P_LIC::decrypt(FILE *ifp, FILE *ofp)
 {
     const unsigned BUFSIZE = 4096;
     unsigned char *read_buf = (unsigned char *)malloc(BUFSIZE * sizeof(unsigned char));
@@ -194,7 +194,7 @@ bool decrypt(FILE *ifp, FILE *ofp)
  * @return true
  * @return false
  */
-bool decrypt(P_DATA &idata, P_DATA &odata)
+bool P_LIC::decrypt(P_DATA &idata, P_DATA &odata)
 {
     const unsigned BUFSIZE = 4096;
     uint8_t *read_buf = (uint8_t *)malloc(BUFSIZE * sizeof(uint8_t));
@@ -249,7 +249,7 @@ bool decrypt(P_DATA &idata, P_DATA &odata)
  *
  * @param license
  */
-void showLicenseInfo(licensepp::License &license)
+void P_LIC::showLicenseInfo(licensepp::License &license)
 {
     std::cout << "[ ID ]: " << license.issuingAuthorityId() << std::endl;
     std::cout << "\t" << std::left << std::setw(25) << "[ licensee ]:" << license.licensee() << std::endl;
@@ -270,7 +270,7 @@ void showLicenseInfo(licensepp::License &license)
  * @return true
  * @return false
  */
-bool issuing(licenseInfo &lInfo, licensepp::License &license)
+bool P_LIC::issuing(licenseInfo &lInfo, licensepp::License &license)
 {
     const licensepp::IssuingAuthority *issuingAuthority = nullptr;
     for (const licensepp::IssuingAuthority &a : LicenseKeysRegister::LICENSE_ISSUING_AUTHORITIES)
@@ -293,7 +293,7 @@ bool issuing(licenseInfo &lInfo, licensepp::License &license)
  * @return true
  * @return false
  */
-bool issuing(licenseInfo &lInfo, std::string licPath)
+bool P_LIC::issuing(licenseInfo &lInfo, std::string licPath)
 {
     licensepp::License license;
     bool ret = issuing(lInfo, license);
@@ -317,11 +317,11 @@ bool issuing(licenseInfo &lInfo, std::string licPath)
  * @return true
  * @return false
  */
-bool issuing(licenseInfo &lInfo, P_DATA &odata)
+bool P_LIC::issuing(licenseInfo &lInfo, P_DATA &odata)
 {
     licensepp::License license;
     bool ret = issuing(lInfo, license);
-    showLicenseInfo(license);
+    // showLicenseInfo(license);
     if (ret)
     {
         std::string licData = license.toString();
@@ -340,11 +340,11 @@ bool issuing(licenseInfo &lInfo, P_DATA &odata)
  * @return true
  * @return false
  */
-bool validateFromFile(std::string license_file, licensepp::License &license)
+bool P_LIC::validateFromFile(std::string license_file, licensepp::License &license)
 {
     LicenseManager licenseManager;
     license.loadFromFile(license_file);
-    showLicenseInfo(license);
+    // showLicenseInfo(license);
     return licenseManager.validate(&license, true, LICENSEE_SIGNATURE);
 }
 
@@ -356,11 +356,11 @@ bool validateFromFile(std::string license_file, licensepp::License &license)
  * @return true
  * @return false
  */
-bool validate(std::string license_string, licensepp::License &license)
+bool P_LIC::validate(std::string license_string, licensepp::License &license)
 {
     LicenseManager licenseManager;
     license.load(license_string);
-    showLicenseInfo(license);
+    // showLicenseInfo(license);
     return licenseManager.validate(&license, true, LICENSEE_SIGNATURE);
 }
 
@@ -372,10 +372,10 @@ bool validate(std::string license_string, licensepp::License &license)
  * @return true
  * @return false
  */
-bool validate(P_DATA &idata, licensepp::License &license)
+bool P_LIC::validate(P_DATA &idata, licensepp::License &license)
 {
     LicenseManager licenseManager;
     license.load(std::string((char *)idata.ptr));
-    showLicenseInfo(license);
+    // showLicenseInfo(license);
     return licenseManager.validate(&license, true, LICENSEE_SIGNATURE);
 }
