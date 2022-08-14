@@ -29,7 +29,7 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-The Crow logo and other graphic material (excluding third party logos) used are under exclusive Copyright (c) 2021, Farook Al-Sammarraie (The-EDev), All rights reserved.
+The Crow logo and other graphic material (excluding third party logos) used are under exclusive Copyright (c) 2021-2022, Farook Al-Sammarraie (The-EDev), All rights reserved.
 */
 #pragma once
 // settings for crow
@@ -95,7 +95,7 @@ The Crow logo and other graphic material (excluding third party logos) used are 
 #if __cplusplus > 201103L
 #define CROW_GCC83_WORKAROUND
 #else
-#error "GCC 8.1 - 8.3 has a bug that prevents crow from compiling with C++11. Please update GCC to > 8.3 or use C++ > 11."
+#error "GCC 8.1 - 8.3 has a bug that prevents Crow from compiling with C++11. Please update GCC to > 8.3 or use C++ > 11."
 #endif
 #endif
 
@@ -346,7 +346,7 @@ namespace crow
                     prefix = "CRITICAL";
                     break;
             }
-            std::cerr << "(" << timestamp() << ") [" << prefix << "] " << message << std::endl;
+            std::cerr << std::string("(") + timestamp() + std::string(") [") + prefix + std::string("] ") + message << std::endl;
         }
 
     private:
@@ -775,11 +775,10 @@ inline int qs_parse(char * qs, char * qs_kv[], int qs_kv_size)
     {
         qs_kv[i] = substr_ptr;
         j = strcspn(substr_ptr, "&");
-        if ( substr_ptr[j] == '\0' ) {  break;  }
+        if ( substr_ptr[j] == '\0' ) { i++; break;  } // x &'s -> means x iterations of this loop -> means *x+1* k/v pairs
         substr_ptr += j + 1;
         i++;
     }
-    i++;  // x &'s -> means x iterations of this loop -> means *x+1* k/v pairs
 
     // we only decode the values in place, the keys could have '='s in them
     // which will hose our ability to distinguish keys from values later
@@ -1693,6 +1692,8 @@ namespace crow
             template<template<typename... Args> class U>
             using rebind = U<T...>;
         };
+
+        // Check whether the template function can be called with specific arguments
         template<typename F, typename Set>
         struct CallHelper;
         template<typename F, typename... Args>
@@ -1722,19 +1723,6 @@ namespace crow
         template<typename T, typename... Ts>
         struct has_type<T, std::tuple<T, Ts...>> : std::true_type
         {};
-
-        // Check F is callable with Args
-        template<typename F, typename... Args>
-        struct is_callable
-        {
-            template<typename F2, typename... Args2>
-            static std::true_type __test(decltype(std::declval<F2>()(std::declval<Args2>()...))*);
-
-            template<typename F2, typename... Args2>
-            static std::false_type __test(...);
-
-            static constexpr bool value = decltype(__test<F, Args...>(nullptr))::value;
-        };
 
         // Kind of fold expressions in C++11
         template<bool...>
@@ -2498,7 +2486,7 @@ namespace crow
 
 // clang-format off
 #ifndef CROW_MSVC_WORKAROUND
-constexpr crow::HTTPMethod operator"" _method(const char* str, size_t /*len*/)
+constexpr crow::HTTPMethod method_from_string(const char* str)
 {
     return crow::black_magic::is_equ_p(str, "GET", 3)    ? crow::HTTPMethod::Get :
            crow::black_magic::is_equ_p(str, "DELETE", 6) ? crow::HTTPMethod::Delete :
@@ -2542,6 +2530,11 @@ constexpr crow::HTTPMethod operator"" _method(const char* str, size_t /*len*/)
 
            crow::black_magic::is_equ_p(str, "SOURCE", 6) ? crow::HTTPMethod::Source :
                                                            throw std::runtime_error("invalid http method");
+}
+
+constexpr crow::HTTPMethod operator"" _method(const char* str, size_t /*len*/)
+{
+    return method_from_string( str );
 }
 #endif
 // clang-format on
@@ -2680,7 +2673,7 @@ namespace crow
             return empty;
         }
 
-        /// Same as \ref get_header_value_Object() but for \ref multipart.header
+        /// Same as \ref get_header_value_object() but for \ref multipart.header
         template<typename T>
         inline const header& get_header_object(const T& headers, const std::string& key)
         {
@@ -3153,17 +3146,20 @@ namespace crow
             {
                 std::size_t last_dot = path.find_last_of(".");
                 std::string extension = path.substr(last_dot + 1);
-                std::string mimeType = "";
                 code = 200;
-                this->add_header("Content-length", std::to_string(file_info.statbuf.st_size));
+                this->add_header("Content-Length", std::to_string(file_info.statbuf.st_size));
 
-                if (extension != "")
+                if (!extension.empty())
                 {
-                    mimeType = mime_types.at(extension);
-                    if (mimeType != "")
-                        this->add_header("Content-Type", mimeType);
+                    const auto mimeType = mime_types.find(extension);
+                    if (mimeType != mime_types.end())
+                    {
+                        this->add_header("Content-Type", mimeType->second);
+                    }
                     else
-                        this->add_header("content-Type", "text/plain");
+                    {
+                        this->add_header("Content-Type", "text/plain");
+                    }
                 }
             }
             else
@@ -3557,39 +3553,22 @@ namespace crow
             static const bool value = decltype(f<MW>(nullptr))::value;
         };
 
-        // wrapped_handler_call transparently wraps a handler call behind (req, res, args...)
         template<typename F, typename... Args>
-        typename std::enable_if<black_magic::is_callable<F, const crow::request, crow::response&, Args...>::value>::type
-          wrapped_handler_call(crow::request& req, crow::response& res, const F& f, Args&&... args)
-        {
-            static_assert(std::is_same<void, decltype(f(std::declval<crow::request>(), std::declval<crow::response&>(), std::declval<Args>()...))>::value,
-                          "Handler function with response argument should have void return type");
-
-            f(req, res, std::forward<Args>(args)...);
-        }
-
-        template<typename F, typename... Args>
-        typename std::enable_if<black_magic::is_callable<F, crow::request&, crow::response&, Args...>::value && !black_magic::is_callable<F, const crow::request, crow::response&, Args...>::value>::type
-          wrapped_handler_call(crow::request& req, crow::response& res, const F& f, Args&&... args)
-        {
-            static_assert(std::is_same<void, decltype(f(std::declval<crow::request&>(), std::declval<crow::response&>(), std::declval<Args>()...))>::value,
-                          "Handler function with response argument should have void return type");
-
-            f(req, res, std::forward<Args>(args)...);
-        }
-
-        template<typename F, typename... Args>
-        typename std::enable_if<black_magic::is_callable<F, crow::response&, Args...>::value>::type
+        typename std::enable_if<black_magic::CallHelper<F, black_magic::S<Args...>>::value, void>::type
           wrapped_handler_call(crow::request& /*req*/, crow::response& res, const F& f, Args&&... args)
         {
-            static_assert(std::is_same<void, decltype(f(std::declval<crow::response&>(), std::declval<Args>()...))>::value,
-                          "Handler function with response argument should have void return type");
+            static_assert(!std::is_same<void, decltype(f(std::declval<Args>()...))>::value,
+                          "Handler function cannot have void return type; valid return types: string, int, crow::response, crow::returnable");
 
-            f(res, std::forward<Args>(args)...);
+            res = crow::response(f(std::forward<Args>(args)...));
+            res.end();
         }
 
         template<typename F, typename... Args>
-        typename std::enable_if<black_magic::is_callable<F, crow::request, Args...>::value>::type
+        typename std::enable_if<
+          !black_magic::CallHelper<F, black_magic::S<Args...>>::value &&
+            black_magic::CallHelper<F, black_magic::S<crow::request&, Args...>>::value,
+          void>::type
           wrapped_handler_call(crow::request& req, crow::response& res, const F& f, Args&&... args)
         {
             static_assert(!std::is_same<void, decltype(f(std::declval<crow::request>(), std::declval<Args>()...))>::value,
@@ -3600,14 +3579,48 @@ namespace crow
         }
 
         template<typename F, typename... Args>
-        typename std::enable_if<black_magic::is_callable<F, Args...>::value>::type
+        typename std::enable_if<
+          !black_magic::CallHelper<F, black_magic::S<Args...>>::value &&
+            !black_magic::CallHelper<F, black_magic::S<crow::request&, Args...>>::value &&
+            black_magic::CallHelper<F, black_magic::S<crow::response&, Args...>>::value,
+          void>::type
           wrapped_handler_call(crow::request& /*req*/, crow::response& res, const F& f, Args&&... args)
         {
-            static_assert(!std::is_same<void, decltype(f(std::declval<Args>()...))>::value,
-                          "Handler function cannot have void return type; valid return types: string, int, crow::response, crow::returnable");
+            static_assert(std::is_same<void, decltype(f(std::declval<crow::response&>(), std::declval<Args>()...))>::value,
+                          "Handler function with response argument should have void return type");
 
-            res = crow::response(f(std::forward<Args>(args)...));
-            res.end();
+            f(res, std::forward<Args>(args)...);
+        }
+
+        template<typename F, typename... Args>
+        typename std::enable_if<
+          !black_magic::CallHelper<F, black_magic::S<Args...>>::value &&
+            !black_magic::CallHelper<F, black_magic::S<crow::request&, Args...>>::value &&
+            !black_magic::CallHelper<F, black_magic::S<crow::response&, Args...>>::value &&
+            black_magic::CallHelper<F, black_magic::S<const crow::request&, crow::response&, Args...>>::value,
+          void>::type
+          wrapped_handler_call(crow::request& req, crow::response& res, const F& f, Args&&... args)
+        {
+            static_assert(std::is_same<void, decltype(f(std::declval<crow::request&>(), std::declval<crow::response&>(), std::declval<Args>()...))>::value,
+                          "Handler function with response argument should have void return type");
+
+            f(req, res, std::forward<Args>(args)...);
+        }
+
+        // wrapped_handler_call transparently wraps a handler call behind (req, res, args...)
+        template<typename F, typename... Args>
+        typename std::enable_if<
+          !black_magic::CallHelper<F, black_magic::S<Args...>>::value &&
+            !black_magic::CallHelper<F, black_magic::S<crow::request&, Args...>>::value &&
+            !black_magic::CallHelper<F, black_magic::S<crow::response&, Args...>>::value &&
+            !black_magic::CallHelper<F, black_magic::S<const crow::request&, crow::response&, Args...>>::value,
+          void>::type
+          wrapped_handler_call(crow::request& req, crow::response& res, const F& f, Args&&... args)
+        {
+            static_assert(std::is_same<void, decltype(f(std::declval<crow::request&>(), std::declval<crow::response&>(), std::declval<Args>()...))>::value,
+                          "Handler function with response argument should have void return type");
+
+            f(req, res, std::forward<Args>(args)...);
         }
 
         template<typename F, typename App, typename... Middlewares>
@@ -6628,7 +6641,7 @@ namespace crow
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/operators.hpp>
 #include <vector>
-#include <math.h>
+#include <cmath>
 
 
 
@@ -6638,6 +6651,9 @@ namespace crow
 
 
 
+
+using std::isinf;
+using std::isnan;
 
 
 namespace crow
@@ -10029,7 +10045,7 @@ namespace crow
             if (pos == req_url.size())
             {
                 found_BP = std::move(*blueprints);
-                return {node->rule_index, *blueprints, *params};
+                return std::tuple<uint16_t, std::vector<uint16_t>, routing_params>{node->rule_index, *blueprints, *params};
             }
 
             bool found_fragment = false;
@@ -10156,7 +10172,7 @@ namespace crow
             if (!found_fragment)
                 found_BP = std::move(*blueprints);
 
-            return {found, found_BP, match_params}; //Called after all the recursions have been done
+            return std::tuple<uint16_t, std::vector<uint16_t>, routing_params>{found, found_BP, match_params}; //Called after all the recursions have been done
         }
 
         //This functions assumes any blueprint info passed is valid
@@ -10722,7 +10738,6 @@ namespace crow
                     allow = allow.substr(0, allow.size() - 2);
                     res = response(204);
                     res.set_header("Allow", allow);
-                    res.manual_length_header = true;
                     res.end();
                     return;
                 }
@@ -10740,7 +10755,6 @@ namespace crow
                         allow = allow.substr(0, allow.size() - 2);
                         res = response(204);
                         res.set_header("Allow", allow);
-                        res.manual_length_header = true;
                         res.end();
                         return;
                     }
@@ -11047,17 +11061,17 @@ namespace crow
         CORSRules default_ = CORSRules(this);
     };
 
-    CORSRules& CORSRules::prefix(const std::string& prefix)
+    inline CORSRules& CORSRules::prefix(const std::string& prefix)
     {
         return handler_->prefix(prefix);
     }
 
-    CORSRules& CORSRules::blueprint(const Blueprint& bp)
+    inline CORSRules& CORSRules::blueprint(const Blueprint& bp)
     {
         return handler_->blueprint(bp);
     }
 
-    CORSRules& CORSRules::global()
+    inline CORSRules& CORSRules::global()
     {
         return handler_->global();
     }
@@ -11310,27 +11324,12 @@ namespace crow
                 }
                 if (req.upgrade)
                 {
-#ifdef CROW_ENABLE_SSL
-                    if (handler_->ssl_used())
-                    {
-                        if (req.get_header_value("upgrade") == "h2")
-                        {
-                            // TODO(ipkn): HTTP/2
-                            // currently, ignore upgrade header
-                        }
-                    }
-                    else if (req.get_header_value("upgrade") == "h2c")
+                    // h2 or h2c headers
+                    if (req.get_header_value("upgrade").substr(0, 2) == "h2")
                     {
                         // TODO(ipkn): HTTP/2
                         // currently, ignore upgrade header
                     }
-#else
-                    if (req.get_header_value("upgrade") == "h2c")
-                    {
-                        // TODO(ipkn): HTTP/2
-                        // currently, ignore upgrade header
-                    }
-#endif
                     else
                     {
                         close_connection_ = true;
@@ -12116,7 +12115,7 @@ namespace crow
 #else
 #define CROW_ROUTE(app, url) app.route<crow::black_magic::get_parameter_tag(url)>(url)
 #define CROW_BP_ROUTE(blueprint, url) blueprint.new_rule_tagged<crow::black_magic::get_parameter_tag(url)>(url)
-#define CROW_MIDDLEWARES(app, ...) middlewares<decltype(app), __VA_ARGS__>()
+#define CROW_MIDDLEWARES(app, ...) middlewares<std::remove_reference<decltype(app)>::type, __VA_ARGS__>()
 #endif
 #define CROW_CATCHALL_ROUTE(app) app.catchall_route()
 #define CROW_BP_CATCHALL_ROUTE(blueprint) blueprint.catchall_rule()
@@ -12148,7 +12147,7 @@ namespace crow
         /// Process an Upgrade request
 
         ///
-        /// Currently used to upgrrade an HTTP connection to a WebSocket connection
+        /// Currently used to upgrade an HTTP connection to a WebSocket connection
         template<typename Adaptor>
         void handle_upgrade(const request& req, response& res, Adaptor&& adaptor)
         {
@@ -12326,7 +12325,8 @@ namespace crow
 
 #ifndef CROW_DISABLE_STATIC_DIR
                 route<crow::black_magic::get_parameter_tag(CROW_STATIC_ENDPOINT)>(CROW_STATIC_ENDPOINT)([](crow::response& res, std::string file_path_partial) {
-                    res.set_static_file_info(CROW_STATIC_DIRECTORY + file_path_partial);
+                    utility::sanitize_filename(file_path_partial);
+                    res.set_static_file_info_unsafe(CROW_STATIC_DIRECTORY + file_path_partial);
                     res.end();
                 });
 
@@ -12339,7 +12339,8 @@ namespace crow
                         if (!bp->static_dir().empty())
                         {
                             bp->new_rule_tagged<crow::black_magic::get_parameter_tag(CROW_STATIC_ENDPOINT)>(CROW_STATIC_ENDPOINT)([bp](crow::response& res, std::string file_path_partial) {
-                                res.set_static_file_info(bp->static_dir() + '/' + file_path_partial);
+                                utility::sanitize_filename(file_path_partial);
+                                res.set_static_file_info_unsafe(bp->static_dir() + '/' + file_path_partial);
                                 res.end();
                             });
                         }
@@ -12427,7 +12428,7 @@ namespace crow
 
 #ifdef CROW_ENABLE_SSL
 
-        /// use certificate and key files for SSL
+        /// Use certificate and key files for SSL
         self_t& ssl_file(const std::string& crt_filename, const std::string& key_filename)
         {
             ssl_used_ = true;
@@ -12440,13 +12441,26 @@ namespace crow
             return *this;
         }
 
-        /// use .pem file for SSL
+        /// Use .pem file for SSL
         self_t& ssl_file(const std::string& pem_filename)
         {
             ssl_used_ = true;
             ssl_context_.set_verify_mode(boost::asio::ssl::verify_peer);
             ssl_context_.set_verify_mode(boost::asio::ssl::verify_client_once);
             ssl_context_.load_verify_file(pem_filename);
+            ssl_context_.set_options(
+              boost::asio::ssl::context::default_workarounds | boost::asio::ssl::context::no_sslv2 | boost::asio::ssl::context::no_sslv3);
+            return *this;
+        }
+
+        /// Use certificate chain and key files for SSL
+        self_t& ssl_chainfile(const std::string& crt_filename, const std::string& key_filename)
+        {
+            ssl_used_ = true;
+            ssl_context_.set_verify_mode(boost::asio::ssl::verify_peer);
+            ssl_context_.set_verify_mode(boost::asio::ssl::verify_client_once);
+            ssl_context_.use_certificate_chain_file(crt_filename);
+            ssl_context_.use_private_key_file(key_filename, ssl_context_t::pem);
             ssl_context_.set_options(
               boost::asio::ssl::context::default_workarounds | boost::asio::ssl::context::no_sslv2 | boost::asio::ssl::context::no_sslv3);
             return *this;
@@ -12466,6 +12480,17 @@ namespace crow
 #else
         template<typename T, typename... Remain>
         self_t& ssl_file(T&&, Remain&&...)
+        {
+            // We can't call .ssl() member function unless CROW_ENABLE_SSL is defined.
+            static_assert(
+              // make static_assert dependent to T; always false
+              std::is_base_of<T, void>::value,
+              "Define CROW_ENABLE_SSL to enable ssl support.");
+            return *this;
+        }
+
+        template<typename T, typename... Remain>
+        self_t& ssl_chainfile(T&&, Remain&&...)
         {
             // We can't call .ssl() member function unless CROW_ENABLE_SSL is defined.
             static_assert(
@@ -12560,6 +12585,7 @@ namespace crow
 
 
 #pragma once
+
 
 
 

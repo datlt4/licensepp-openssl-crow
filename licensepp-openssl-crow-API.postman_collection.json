@@ -1,0 +1,255 @@
+{
+	"info": {
+		"_postman_id": "7724592e-b067-4e4b-9c61-90ae486fb2cf",
+		"name": "licensepp-openssl-crow-API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "7713502"
+	},
+	"item": [
+		{
+			"name": "root",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://192.168.120.107:6262/",
+					"protocol": "http",
+					"host": [
+						"192",
+						"168",
+						"120",
+						"107"
+					],
+					"port": "6262",
+					"path": [
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "license",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": []
+				},
+				"url": {
+					"raw": "http://192.168.120.107:6262/license/lic?serial=10932847102398&period=87600&licensee=EMoi",
+					"protocol": "http",
+					"host": [
+						"192",
+						"168",
+						"120",
+						"107"
+					],
+					"port": "6262",
+					"path": [
+						"license",
+						"lic"
+					],
+					"query": [
+						{
+							"key": "serial",
+							"value": "10932847102398"
+						},
+						{
+							"key": "period",
+							"value": "87600"
+						},
+						{
+							"key": "licensee",
+							"value": "EMoi"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "license",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "serial",
+							"value": "10932847102398",
+							"type": "text"
+						},
+						{
+							"key": "period",
+							"value": "87600",
+							"type": "text"
+						},
+						{
+							"key": "licensee",
+							"value": "EMoi",
+							"type": "text"
+						},
+						{
+							"key": "enc_pass",
+							"value": "9jIY876UJHGuY576tGJU76TUjhg",
+							"type": "text"
+						},
+						{
+							"key": "enc_iter",
+							"value": "280622",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://192.168.120.107:6262/license/lic",
+					"protocol": "http",
+					"host": [
+						"192",
+						"168",
+						"120",
+						"107"
+					],
+					"port": "6262",
+					"path": [
+						"license",
+						"lic"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "validate",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "/home/emoi/Downloads/openssl/licensepp-openssl/build/c5.enc"
+						},
+						{
+							"key": "enc_pass",
+							"value": "9jIY876UJHGuY576tGJU76TUjhg",
+							"type": "text"
+						},
+						{
+							"key": "enc_iter",
+							"value": "280622",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://192.168.120.107:6262/validate",
+					"protocol": "http",
+					"host": [
+						"192",
+						"168",
+						"120",
+						"107"
+					],
+					"port": "6262",
+					"path": [
+						"validate"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "encrypt",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "/home/emoi/Downloads/openssl/licensepp-openssl/build/c5.lic"
+						},
+						{
+							"key": "enc_pass",
+							"value": "9jIY876UJHGuY576tGJU76TUjhg",
+							"type": "text"
+						},
+						{
+							"key": "enc_iter",
+							"value": "280622",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://192.168.120.107:6262/encrypt",
+					"protocol": "http",
+					"host": [
+						"192",
+						"168",
+						"120",
+						"107"
+					],
+					"port": "6262",
+					"path": [
+						"encrypt"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "decrypt",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "/home/emoi/Downloads/openssl/licensepp-openssl/build/c5.enc"
+						},
+						{
+							"key": "enc_pass",
+							"value": "9jIY876UJHGuY576tGJU76TUjhg",
+							"type": "text"
+						},
+						{
+							"key": "enc_iter",
+							"value": "280622",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://192.168.120.107:6262/decrypt",
+					"protocol": "http",
+					"host": [
+						"192",
+						"168",
+						"120",
+						"107"
+					],
+					"port": "6262",
+					"path": [
+						"decrypt"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

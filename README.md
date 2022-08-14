@@ -128,3 +128,79 @@ else
 
 # Licensepp Sever
 
+## Build server
+
+```bash
+cmake .. && make -j$(nproc)
+./licensepp-openssl 6262
+```
+
+## Issuing license
+
+- **_Generate raw licsence file_**
+
+```bash
+curl "http://192.168.120.107:6262/license?serial=10932847102398&period=87600&licensee=EMoi" -o lic
+```
+
+- **_Generate encrytped licsence file_**
+
+```bash
+curl -X POST \
+    -F serial=10932847102398 \
+    -F period=87600 \
+    -F licensee=EMoi \
+    -F enc_pass=9jIY876UJHGuY576tGJU76TUjhg \
+    -F enc_iter=280622 \
+    http://192.168.120.107:6262/license/lic -o c5.enc
+
+# minimum command
+curl -X POST \
+    -F serial=10932847102398 \
+    http://192.168.120.107:6262/license/lic -o c5.enc
+```
+
+## Validate license
+
+```bash
+curl -X POST \
+    -F file=@c5.enc \
+    -F enc_pass=9jIY876UJHGuY576tGJU76TUjhg \
+    -F enc_iter=280622 \
+    http://192.168.120.107:6262/validate | python -m json.tool
+
+# minimum command
+curl -X POST \
+    -F file=@c5.enc \
+    http://192.168.120.107:6262/validate | python -m json.tool
+```
+
+## Encrypt file
+
+```bash
+curl -X POST \
+    -F file=@c5.lic \
+    -F enc_pass=9jIY876UJHGuY576tGJU76TUjhg \
+    -F enc_iter=280622 \
+    http://192.168.120.107:6262/encrypt -o c5.enc
+
+# minimum command
+curl -X POST \
+    -F file=@c5.lic \
+    http://192.168.120.107:6262/encrypt -o c5.enc
+```
+
+## Decrypt file
+
+```bash
+curl -X POST \
+    -F file=@c5.enc \
+    -F enc_pass=9jIY876UJHGuY576tGJU76TUjhg \
+    -F enc_iter=280622 \
+    http://192.168.120.107:6262/decrypt -o c5.dec
+
+# minimum command
+curl -X POST \
+    -F file=@c5.enc \
+    http://192.168.120.107:6262/decrypt -o c5.dec
+```

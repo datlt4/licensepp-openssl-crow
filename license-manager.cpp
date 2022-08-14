@@ -10,7 +10,7 @@
  * @return true
  * @return false
  */
-bool P_LIC::encrypt(FILE *ifp, FILE *ofp)
+bool P_LIC::encrypt(FILE *ifp, FILE *ofp, const char *enc_pass, int enc_iter)
 {
     const unsigned BUFSIZE = 4096;
     unsigned char *read_buf = (unsigned char *)malloc(BUFSIZE * sizeof(unsigned char));
@@ -31,7 +31,7 @@ bool P_LIC::encrypt(FILE *ifp, FILE *ofp)
         return false;
     }
 
-    PKCS5_PBKDF2_HMAC((char *)ENC_PASS, -1, salt, sizeof(salt), ENC_ITER, EVP_sha256(), iklen + ivlen, keyivpair);
+    PKCS5_PBKDF2_HMAC((char *)enc_pass, -1, salt, sizeof(salt), enc_iter, EVP_sha256(), iklen + ivlen, keyivpair);
     memcpy(key, keyivpair, iklen);
     memcpy(iv, keyivpair + iklen, ivlen);
     EVP_CIPHER_CTX *ctx;
@@ -73,8 +73,9 @@ bool P_LIC::encrypt(FILE *ifp, FILE *ofp)
  * @return true
  * @return false
  */
-bool P_LIC::encrypt(P_DATA &idata, P_DATA &odata)
+bool P_LIC::encrypt(P_DATA &idata, P_DATA &odata, const char *enc_pass, int enc_iter)
 {
+    std::cout << TAGLINE << __func__ << " PASSWORD " << std::string(enc_pass) << "  " << enc_iter << std::endl;
     const uint32_t BUFSIZE = 4096;
     uint8_t *read_buf = (uint8_t *)malloc(BUFSIZE * sizeof(uint8_t));
     uint8_t *cipher_buf;
@@ -94,7 +95,7 @@ bool P_LIC::encrypt(P_DATA &idata, P_DATA &odata)
         return false;
     }
 
-    PKCS5_PBKDF2_HMAC((char *)ENC_PASS, -1, salt, sizeof(salt), ENC_ITER, EVP_sha256(), iklen + ivlen, keyivpair);
+    PKCS5_PBKDF2_HMAC((char *)enc_pass, -1, salt, sizeof(salt), enc_iter, EVP_sha256(), iklen + ivlen, keyivpair);
     memcpy(key, keyivpair, iklen);
     memcpy(iv, keyivpair + iklen, ivlen);
     EVP_CIPHER_CTX *ctx;
@@ -137,7 +138,7 @@ bool P_LIC::encrypt(P_DATA &idata, P_DATA &odata)
  * @return true
  * @return false
  */
-bool P_LIC::decrypt(FILE *ifp, FILE *ofp)
+bool P_LIC::decrypt(FILE *ifp, FILE *ofp, const char *enc_pass, int enc_iter)
 {
     const unsigned BUFSIZE = 4096;
     unsigned char *read_buf = (unsigned char *)malloc(BUFSIZE * sizeof(unsigned char));
@@ -153,7 +154,7 @@ bool P_LIC::decrypt(FILE *ifp, FILE *ofp)
     unsigned char salt[8];
     int numRead = fread(salt, sizeof(unsigned char), 8, ifp);
     numRead = fread(salt, sizeof(unsigned char), 8, ifp);
-    PKCS5_PBKDF2_HMAC((char *)ENC_PASS, -1, salt, sizeof(salt), ENC_ITER, EVP_sha256(), iklen + ivlen, keyivpair);
+    PKCS5_PBKDF2_HMAC((char *)enc_pass, -1, salt, sizeof(salt), enc_iter, EVP_sha256(), iklen + ivlen, keyivpair);
 
     memcpy(key, keyivpair, iklen);
     memcpy(iv, keyivpair + iklen, ivlen);
@@ -194,8 +195,9 @@ bool P_LIC::decrypt(FILE *ifp, FILE *ofp)
  * @return true
  * @return false
  */
-bool P_LIC::decrypt(P_DATA &idata, P_DATA &odata)
+bool P_LIC::decrypt(P_DATA &idata, P_DATA &odata, const char *enc_pass, int enc_iter)
 {
+    std::cout << TAGLINE << __func__ << " PASSWORD " << std::string(enc_pass) << "  " << enc_iter << std::endl;
     const unsigned BUFSIZE = 4096;
     uint8_t *read_buf = (uint8_t *)malloc(BUFSIZE * sizeof(uint8_t));
     uint8_t *cipher_buf;
@@ -211,7 +213,7 @@ bool P_LIC::decrypt(P_DATA &idata, P_DATA &odata)
     uint8_t salt[8];
     int numRead = idata.m_read(salt, sizeof(uint8_t) * 8);
     numRead = idata.m_read(salt, sizeof(uint8_t) * 8);
-    PKCS5_PBKDF2_HMAC((char *)ENC_PASS, -1, salt, sizeof(salt), ENC_ITER, EVP_sha256(), iklen + ivlen, keyivpair);
+    PKCS5_PBKDF2_HMAC((char *)enc_pass, -1, salt, sizeof(salt), enc_iter, EVP_sha256(), iklen + ivlen, keyivpair);
 
     memcpy(key, keyivpair, iklen);
     memcpy(iv, keyivpair + iklen, ivlen);
@@ -278,11 +280,12 @@ bool P_LIC::issuing(licenseInfo &lInfo, licensepp::License &license)
             issuingAuthority = &(a);
     if (issuingAuthority == nullptr)
     {
-        std::cout << "Invalid issuing authority." << std::endl;
+        std::cerr << "Invalid issuing authority.\n";
         return false;
     }
     LicenseManager licenseManager;
     license = licenseManager.issue(lInfo.licensee, lInfo.period, issuingAuthority, lInfo.secret, lInfo.licenseeSignature, lInfo.additionalPayload);
+    return true;
 }
 
 /**

@@ -279,10 +279,10 @@ namespace P_LIC
         unsigned int period;
     };
 
-    bool encrypt(FILE *ifp, FILE *ofp);
-    bool encrypt(P_DATA &idata, P_DATA &odata);
-    bool decrypt(FILE *ifp, FILE *ofp);
-    bool decrypt(P_DATA &idata, P_DATA &odata);
+    bool encrypt(FILE *ifp, FILE *ofp, const char *enc_pass = ENC_PASS, int enc_iter = ENC_ITER);
+    bool encrypt(P_DATA &idata, P_DATA &odata, const char *enc_pass = ENC_PASS, int enc_iter = ENC_ITER);
+    bool decrypt(FILE *ifp, FILE *ofp, const char *enc_pass = ENC_PASS, int enc_iter = ENC_ITER);
+    bool decrypt(P_DATA &idata, P_DATA &odata, const char *enc_pass = ENC_PASS, int enc_iter = ENC_ITER);
     void showLicenseInfo(licensepp::License &license);
     bool issuing(licenseInfo &lInfo, licensepp::License &license);
     bool issuing(licenseInfo &lInfo, std::string licPath = "EMoi.lic");
