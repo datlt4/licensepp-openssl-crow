@@ -1,0 +1,7 @@
+# For Heroku App deployment.
+build:
+  docker:
+    web: Dockerfile
+
+run:
+    web: 

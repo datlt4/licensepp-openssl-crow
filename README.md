@@ -208,3 +208,13 @@ curl -X POST \
 ## Dockerhub
 
 [link](https://hub.docker.com/repository/docker/hienanh/licensepp-openssl-crow)
+
+## Deploy Heroku
+
+```
+heroku login
+heroku container:login
+heroku create
+heroku container:push web --app <name_of_container>
+heroku open --app <name_of_container>
+```
