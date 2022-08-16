@@ -19,6 +19,10 @@ set(LIB ${LIB} OpenSSL::Crypto liblicensepp.so.1.0.6)
 # add Source
 set(SRC ${SRC} license-manager.cpp)
 
+message(STATUS "SRC: ${SRC}")
+message(STATUS "INC: ${INC}")
+message(STATUS "LIB: ${LIB}")
+
 add_executable(${PROJECT_NAME} main.cpp)
 target_sources(${PROJECT_NAME} PRIVATE ${SRC})
 
