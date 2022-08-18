@@ -137,13 +137,13 @@ cmake .. && make -j$(nproc)
 
 ## Issuing license
 
-- **_Generate raw licsence file_**
+- **_Generate raw license file_**
 
 ```bash
-curl "http://192.168.120.107:6262/license?serial=10932847102398&period=87600&licensee=EMoi" -o lic
+curl "http://192.168.120.107:6262/license/lic?serial=10932847102398&period=87600&licensee=EMoi&authorityId=c1" -o lic
 ```
 
-- **_Generate encrytped licsence file_**
+- **_Generate encrytped license file_**
 
 ```bash
 curl -X POST \
@@ -152,6 +152,7 @@ curl -X POST \
     -F licensee=EMoi \
     -F enc_pass=9jIY876UJHGuY576tGJU76TUjhg \
     -F enc_iter=280622 \
+    -F authorityId=c1 \
     http://192.168.120.107:6262/license/lic -o c5.enc
 
 # minimum command

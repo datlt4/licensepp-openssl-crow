@@ -10,19 +10,24 @@ int main(int argc, char **argv)
      { return "Licensepp + OpenSSL + Crow"; });
 
     CROW_ROUTE(app, "/license/<string>").methods("GET"_method, "POST"_method)([](const crow::request &req, std::string path)
-                                                        {
+                                                                              {
         try
         {
             if (req.method == "GET"_method)
             {
                 std::string additionalPayload;
                 unsigned int period = 86400U;
+                std::string Id = "";
                 std::string licensee = "EMoi_ltd";
 
                 if (req.url_params.get("serial") == nullptr)
                     {std::cout<<TAGLINE<<__func__<<std::endl;
                         return crow::response(400);}
                 additionalPayload = std::string(req.url_params.get("serial"));
+                if (req.url_params.get("authorityId") != nullptr)
+                    Id = std::string(req.url_params.get("authorityId"));
+                else
+                    Id = "c1";
 
                 if (req.url_params.get("period") != nullptr)
                     period = static_cast<unsigned int>(std::stoi(std::string(req.url_params.get("period"))));
@@ -31,9 +36,12 @@ int main(int argc, char **argv)
                     licensee = std::string(req.url_params.get("licensee"));
 
                 std::cout << additionalPayload << "  " << period << "  " << licensee << std::endl;
-                P_LIC::licenseInfo lInfo1{LICENSEE_SIGNATURE, licensee, "c1-secret-passphrase", "c1", additionalPayload, period};
+
+
+                P_LIC::licenseInfo lInfo{LICENSEE_SIGNATURE, licensee, "", "", additionalPayload, period};
+                P_LIC::getAuthorityIdSecret(Id, lInfo);
                 P_LIC::P_DATA licData;
-                if (issuing(lInfo1, licData))
+                if (issuing(lInfo, licData))
                 {
                     crow::response res(200, std::string((char*)licData.ptr, licData.size));
                     res.add_header("Content-Disposition", "attachment; filename=" + path);
@@ -47,6 +55,7 @@ int main(int argc, char **argv)
             {
                 std::string additionalPayload = "";
                 unsigned int period = 86400U;
+                std::string Id = "";
                 std::string licensee = "EMoi_ltd";
                 std::string enc_pass = ENC_PASS;
                 int enc_iter = ENC_ITER;
@@ -56,6 +65,10 @@ int main(int argc, char **argv)
                     additionalPayload = msg.part_map.find("serial")->second.body;
                 else
                     return crow::response(400);
+                if (msg.part_map.find("authorityId") != msg.part_map.end())
+                    Id = msg.part_map.find("authorityId")->second.body;
+                else
+                    Id = "c1";
                 if (msg.part_map.find("period") != msg.part_map.end())
                     period = std::atoi(msg.part_map.find("period")->second.body.c_str());
                 if (msg.part_map.find("licensee") != msg.part_map.end())
@@ -65,11 +78,12 @@ int main(int argc, char **argv)
                 if (msg.part_map.find("enc_iter") != msg.part_map.end())
                     enc_iter = std::atoi(msg.part_map.find("enc_iter")->second.body.c_str());
 
-                    
-                P_LIC::licenseInfo lInfo1{LICENSEE_SIGNATURE, licensee, "c1-secret-passphrase", "c1", additionalPayload, period};
+                P_LIC::licenseInfo lInfo{LICENSEE_SIGNATURE, licensee, "c1-secret-passphrase", "c1", additionalPayload, period};
+                P_LIC::getAuthorityIdSecret(Id, lInfo);
+
                 P_LIC::P_DATA licData;
                 P_LIC::P_DATA encData;
-                issuing(lInfo1, licData);
+                issuing(lInfo, licData);
                 // licData.save_all("c5.lic");
                 encrypt(licData, encData, enc_pass.c_str(), enc_iter);
                 crow::response res(200, std::string((char*)encData.ptr, encData.size));
@@ -81,7 +95,7 @@ int main(int argc, char **argv)
         catch (const std::exception &e)
         {
             std::cerr << "[ERROR] " << e.what() << std::endl;
-            return crow::response(500);
+            return crow::response(500, e.what());
         } });
 
     CROW_ROUTE(app, "/validate").methods("POST"_method)([](const crow::request &req)
@@ -116,12 +130,14 @@ int main(int argc, char **argv)
                 return res;
             }
             else
+            {
                 return crow::response(422, "License is NOT valid");
+            }
         }
         catch (const std::exception &e)
         {
             std::cerr << "[ERROR] " << e.what() << std::endl;
-            return crow::response(500);
+            return crow::response(500, e.what());
 
         } });
 
@@ -160,7 +176,7 @@ int main(int argc, char **argv)
         catch (const std::exception &e)
         {
             std::cerr << "[ERROR] " << e.what() << std::endl;
-            return crow::response(500);
+            return crow::response(500, e.what());
         } });
 
     CROW_ROUTE(app, "/decrypt").methods("POST"_method)([](const crow::request &req)
@@ -198,7 +214,7 @@ int main(int argc, char **argv)
         catch (const std::exception &e)
         {
             std::cerr << "[ERROR] " << e.what() << std::endl;
-            return crow::response(500);
+            return crow::response(500, e.what());
         } });
 
     // ignore all log

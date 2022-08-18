@@ -1,5 +1,46 @@
 #include "license-manager.h"
 
+void P_LIC::getAuthorityIdSecret(std::string &Id, P_LIC::licenseInfo &lInfo)
+{
+    switch (P_LIC::hash(Id.c_str()))
+    {
+    case P_LIC::hash("0"):
+    case P_LIC::hash("sample-license-authority"):
+        lInfo.authorityId = "sample-license-authority";
+        lInfo.secret = "";
+        break;
+    case P_LIC::hash("1"):
+    case P_LIC::hash("c1"):
+        lInfo.authorityId = "c1";
+        lInfo.secret = "c1-secret-passphrase";
+        break;
+    case P_LIC::hash("2"):
+    case P_LIC::hash("c2"):
+        lInfo.authorityId = "c2";
+        lInfo.secret = "c2-secret-passphrase";
+        break;
+    case P_LIC::hash("3"):
+    case P_LIC::hash("c3"):
+        lInfo.authorityId = "c3";
+        lInfo.secret = "c3-secret-passphrase";
+        break;
+    case P_LIC::hash("4"):
+    case P_LIC::hash("c4"):
+        lInfo.authorityId = "c4";
+        lInfo.secret = "c4-secret-passphrase";
+        break;
+    case P_LIC::hash("5"):
+    case P_LIC::hash("c5"):
+        lInfo.authorityId = "c5";
+        lInfo.secret = "c5-secret-passphrase";
+        break;
+    default:
+        lInfo.authorityId = "sample-license-authority";
+        lInfo.secret = "";
+        break;
+    }
+}
+
 /**
  * @brief Encypt data from a file stream, this function is equivalent below command: openssl enc -aes-256-cbc -md sha256 -pbkdf2 -iter <ENC_ITER> -k <ENC_PASS> -in <input-filename> -out <output-filename>
  *
@@ -378,6 +419,7 @@ bool P_LIC::validate(std::string license_string, licensepp::License &license)
 bool P_LIC::validate(P_DATA &idata, licensepp::License &license)
 {
     LicenseManager licenseManager;
+    idata.m_write((void*)"\0", 1);
     license.load(std::string((char *)idata.ptr));
     // showLicenseInfo(license);
     return licenseManager.validate(&license, true, LICENSEE_SIGNATURE);
