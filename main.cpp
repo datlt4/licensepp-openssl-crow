@@ -49,7 +49,7 @@ int main(int argc, char **argv)
                     return res;
                 }
                 else
-                    return crow::response(404);
+                    return crow::response(404, std::string("{\"message\":\"Error when generating license\"}"));
             }
             else if (req.method == "POST"_method)
             {
@@ -95,7 +95,7 @@ int main(int argc, char **argv)
         catch (const std::exception &e)
         {
             std::cerr << "[ERROR] " << e.what() << std::endl;
-            return crow::response(500, e.what());
+            return crow::response(500, std::string("{\"message\":\"") + std::string(e.what()) + std::string("\"}"));
         } });
 
     CROW_ROUTE(app, "/validate").methods("POST"_method)([](const crow::request &req)
@@ -122,8 +122,8 @@ int main(int argc, char **argv)
             
             encData.m_write((void*)file.c_str(), file.length(), true);
             P_LIC::decrypt(encData, decData, enc_pass.c_str(), enc_iter);
-
-            if (P_LIC::validate(decData, license))
+            licensepp::VALIDATE_ERROR val_err = P_LIC::validate(decData, license);
+            if (!static_cast<int>(val_err.error_code))
             {
                 crow::response res(200, license.raw());
                 res.add_header("Content-Type", "application/json");
@@ -131,13 +131,14 @@ int main(int argc, char **argv)
             }
             else
             {
-                return crow::response(422, "License is NOT valid");
+                // return crow::response(422, "License is NOT valid");
+                return crow::response(422, std::string("{\"message\":\"") + val_err.message + std::string("\"}"));
             }
         }
         catch (const std::exception &e)
         {
             std::cerr << "[ERROR] " << e.what() << std::endl;
-            return crow::response(500, e.what());
+            return crow::response(500, std::string("{\"message\":\"") + std::string(e.what()) + std::string("\"}"));
 
         } });
 
@@ -171,12 +172,12 @@ int main(int argc, char **argv)
                 return res;
             }
             else
-                return crow::response(404);
+                return crow::response(500, std::string("{\"message\":\"Error when encrypting!\"}"));
         }
         catch (const std::exception &e)
         {
             std::cerr << "[ERROR] " << e.what() << std::endl;
-            return crow::response(500, e.what());
+            return crow::response(500, std::string("{\"message\":\"") + std::string(e.what()) + std::string("\"}"));
         } });
 
     CROW_ROUTE(app, "/decrypt").methods("POST"_method)([](const crow::request &req)
@@ -209,12 +210,12 @@ int main(int argc, char **argv)
                 return res;
             }
             else
-                return crow::response(500);
+                return crow::response(500, std::string("{\"message\":\"Error when decrypting!\"}"));
         }
         catch (const std::exception &e)
         {
             std::cerr << "[ERROR] " << e.what() << std::endl;
-            return crow::response(500, e.what());
+            return crow::response(500, std::string("{\"message\":\"") + std::string(e.what()) + std::string("\"}"));
         } });
 
     // ignore all log

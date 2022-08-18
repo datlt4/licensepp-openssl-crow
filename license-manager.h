@@ -39,7 +39,8 @@
 #define LICENSEE_SIGNATURE "D712EAD67B95D09C8AF84E44ECCAA01D"
 
 #ifndef TAGLINE
-#define TAGLINE "\t <File:" << __FUNCTION__ << ">" << "<L" << __LINE__ << "> "
+#define TAGLINE "\t <File:" << __FUNCTION__ << ">" \
+                            << "<L" << __LINE__ << "> "
 #endif // TAGLINE
 namespace P_LIC
 {
@@ -307,8 +308,8 @@ namespace P_LIC
     bool issuing(licenseInfo &lInfo, licensepp::License &license);
     bool issuing(licenseInfo &lInfo, std::string licPath = "EMoi.lic");
     bool issuing(licenseInfo &lInfo, P_DATA &odata);
-    bool validateFromFile(std::string license_file, licensepp::License &license);
-    bool validate(std::string license_string, licensepp::License &license);
-    bool validate(P_DATA &idata, licensepp::License &license);
+    licensepp::VALIDATE_ERROR validateFromFile(std::string license_file, licensepp::License &license);
+    licensepp::VALIDATE_ERROR validate(std::string license_string, licensepp::License &license);
+    licensepp::VALIDATE_ERROR validate(P_DATA &idata, licensepp::License &license);
 };
 #endif // LICENSE_MANAGER_H

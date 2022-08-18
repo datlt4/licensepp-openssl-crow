@@ -384,7 +384,7 @@ bool P_LIC::issuing(licenseInfo &lInfo, P_DATA &odata)
  * @return true
  * @return false
  */
-bool P_LIC::validateFromFile(std::string license_file, licensepp::License &license)
+licensepp::VALIDATE_ERROR P_LIC::validateFromFile(std::string license_file, licensepp::License &license)
 {
     LicenseManager licenseManager;
     license.loadFromFile(license_file);
@@ -400,7 +400,7 @@ bool P_LIC::validateFromFile(std::string license_file, licensepp::License &licen
  * @return true
  * @return false
  */
-bool P_LIC::validate(std::string license_string, licensepp::License &license)
+licensepp::VALIDATE_ERROR P_LIC::validate(std::string license_string, licensepp::License &license)
 {
     LicenseManager licenseManager;
     license.load(license_string);
@@ -416,11 +416,12 @@ bool P_LIC::validate(std::string license_string, licensepp::License &license)
  * @return true
  * @return false
  */
-bool P_LIC::validate(P_DATA &idata, licensepp::License &license)
+licensepp::VALIDATE_ERROR P_LIC::validate(P_DATA &idata, licensepp::License &license)
 {
     LicenseManager licenseManager;
-    idata.m_write((void*)"\0", 1);
+    idata.m_write((void *)"\0", 1);
     license.load(std::string((char *)idata.ptr));
     // showLicenseInfo(license);
+    std::string message;
     return licenseManager.validate(&license, true, LICENSEE_SIGNATURE);
 }

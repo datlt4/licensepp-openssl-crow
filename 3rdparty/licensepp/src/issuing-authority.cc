@@ -21,34 +21,33 @@
 
 using namespace licensepp;
 
-IssuingAuthority::IssuingAuthority(const std::string& id,
-                                   const std::string& name,
-                                   const std::string& keypair,
+IssuingAuthority::IssuingAuthority(const std::string &id,
+                                   const std::string &name,
+                                   const std::string &keypair,
                                    unsigned int maxValidity,
-                                   bool active) :
-    m_id(id),
-    m_name(name),
-    m_keypair(keypair),
-    m_active(active),
-    m_maxValidity(maxValidity)
+                                   bool active) : m_id(id),
+                                                  m_name(name),
+                                                  m_keypair(keypair),
+                                                  m_active(active),
+                                                  m_maxValidity(maxValidity)
 {
-    if (m_maxValidity < 24U) {
+    if (m_maxValidity < 24U)
+    {
         std::cerr << "Could not activate issuing authority "
                   << id << ", it should be able to issue at least 24 hours license" << std::endl;
         m_active = false;
     }
 }
 
-IssuingAuthority::IssuingAuthority(const IssuingAuthority& other):
-    m_id(other.m_id),
-    m_name(other.m_name),
-    m_keypair(other.m_keypair),
-    m_active(other.m_active),
-    m_maxValidity(other.m_maxValidity)
+IssuingAuthority::IssuingAuthority(const IssuingAuthority &other) : m_id(other.m_id),
+                                                                    m_name(other.m_name),
+                                                                    m_keypair(other.m_keypair),
+                                                                    m_active(other.m_active),
+                                                                    m_maxValidity(other.m_maxValidity)
 {
 }
 
-IssuingAuthority& IssuingAuthority::operator=(IssuingAuthority other)
+IssuingAuthority &IssuingAuthority::operator=(IssuingAuthority other)
 {
     std::swap(m_id, other.m_id);
     std::swap(m_name, other.m_name);
@@ -59,27 +58,32 @@ IssuingAuthority& IssuingAuthority::operator=(IssuingAuthority other)
     return *this;
 }
 
-License IssuingAuthority::issue(const std::string& licensee,
+License IssuingAuthority::issue(const std::string &licensee,
                                 unsigned int validityPeriod,
-                                const std::string& masterKey,
-                                const std::string& secret,
-                                const std::string& licenseeSignature,
-                                const std::string& additionalPayload) const
+                                const std::string &masterKey,
+                                const std::string &secret,
+                                const std::string &licenseeSignature,
+                                const std::string &additionalPayload) const
 {
-    if (licensee.empty()) {
+    if (licensee.empty())
+    {
         throw LicenseException("Please provide valid licensee name and signature");
     }
-    if (licensee.size() == 1 || licensee.size() > 255) {
+    if (licensee.size() == 1 || licensee.size() > 255)
+    {
         throw LicenseException("Licensee name too long. Please choose characters between 2-255");
     }
-    if (validityPeriod < 24U) {
+    if (validityPeriod < 24U)
+    {
         throw LicenseException("License cannot be valid for less than 24 hours");
     }
-    if (validityPeriod > maxValidity()) {
+    if (validityPeriod > maxValidity())
+    {
         throw LicenseException("License authority " + id() + " cannot issue license valid for more than " + std::to_string(maxValidity()) + " hours");
     }
     auto now = Utils::nowUtc();
-    if (now == 0) {
+    if (now == 0)
+    {
         // This should never happen with gcc or clang compilers
         std::cerr << "WARN: Could not find UTC time, using local time" << std::endl;
         now = static_cast<unsigned long long>(Utils::now());
@@ -93,86 +97,115 @@ License IssuingAuthority::issue(const std::string& licensee,
     license.setExpiryDate(now + (validityPeriod * 3600));
     license.setIssuingAuthorityId(id());
     license.setAdditionalPayload(additionalPayload);
-    if (!licenseeSignature.empty()) {
-        try {
+    if (!licenseeSignature.empty())
+    {
+        try
+        {
             license.setLicenseeSignature(Base16::encode(AES::encrypt(licenseeSignature, masterKey)));
-        } catch (std::exception& e) {
+        }
+        catch (std::exception &e)
+        {
             throw LicenseException("Failed to issue the license; " + std::string(e.what()));
         }
     }
     // issuing authority signs this license
     auto separatorPos = m_keypair.find(":");
-    if (separatorPos == std::string::npos) {
+    if (separatorPos == std::string::npos)
+    {
         throw LicenseException("Issuing authority could not be loaded. Invalid keypair");
     }
 
     const RSA::PrivateKey key = RSA::loadPrivateKey(Base64::decode(m_keypair.substr(0, separatorPos)), secret);
 
-    try {
+    try
+    {
         license.setAuthoritySignature(RSA::sign(license.raw(), key, secret));
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception &e)
+    {
         std::cerr << "Failed to sign the license" + std::string(e.what()) << std::endl;
         throw LicenseException(e.what());
     }
-
-    if (!validate(&license, masterKey, true, licenseeSignature)) {
+    if (validate(&license, masterKey, true, licenseeSignature).error_code != VALIDATE_ERROR_ENUM::LICENSE_IS_VALID)
+    {
         throw LicenseException("Failed to validate new license. Please report it @https://github.com/amrayn/licensepp");
     }
     return license;
 }
 
-bool IssuingAuthority::validate(const License* license,
-                                const std::string& masterKey,
-                                bool validateSignature,
-                                const std::string& licenseeSignature) const
+VALIDATE_ERROR IssuingAuthority::validate(const License *license,
+                                          const std::string &masterKey,
+                                          bool validateSignature,
+                                          const std::string &licenseeSignature) const
 {
     bool result = false;
-    try {
+    try
+    {
 
         // issuing authority signs this license
         auto separatorPos = m_keypair.find(":");
-        if (separatorPos == std::string::npos) {
+        if (separatorPos == std::string::npos)
+        {
             throw LicenseException("Issuing authority could not be loaded. Invalid keypair");
         }
 
         RSA::PublicKey key = RSA::loadPublicKey(Base64::decode(m_keypair.substr(separatorPos + 1)));
 
         result = RSA::verify(license->raw(), license->authoritySignature(), key);
-        if (!result) {
+        if (!result)
+        {
             std::cerr << "Failed to verify the licensing authority" << std::endl;
-            return false;
+            // return false;
+            return VALIDATE_ERROR{VALIDATE_ERROR_ENUM::FAILED_VERIFY_LICENSING_AUTHORITY, "Failed to verify the licensing authority"};
         }
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception &e)
+    {
         std::cerr << "Failed to verify the licensing authority. " << e.what() << std::endl;
-        return false;
+        // return false;
+        return VALIDATE_ERROR{VALIDATE_ERROR_ENUM::FAILED_VERIFY_LICENSING_AUTHORITY, "Failed to verify the licensing authority"};
+        ;
     }
     auto now = Utils::nowUtc();
-    if (now == 0) {
+    if (now == 0)
+    {
         // This should never happen with gcc or clang compilers
         std::cerr << "WARN: Could not find UTC time, using local time" << std::endl;
         now = static_cast<unsigned long long>(Utils::now());
     }
 
     auto diff = static_cast<int64_t>(license->expiryDate() - now);
-    if (diff < 0) {
+    if (diff < 0)
+    {
         int64_t hourDiff = ceil(llabs(diff) / 3600LL);
         std::cerr << "License was expired " << hourDiff << " hour"
                   << (hourDiff > 1 ? "s" : "") << " ago" << std::endl;
-        return false;
+        // return false;
+        return VALIDATE_ERROR{VALIDATE_ERROR_ENUM::LICENSE_WAS_EXPIRED, std::string("License was expired ") + std::to_string(hourDiff) + std::string(hourDiff > 1 ? " hours ago" : " hour ago")};
     }
 
-    if (!validateSignature && !license->licenseeSignature().empty()) {
+    if (!validateSignature && !license->licenseeSignature().empty())
+    {
         std::cerr << "Signature available on license, you should verify the signature" << std::endl;
-        return false;
+        return VALIDATE_ERROR{VALIDATE_ERROR_ENUM::SHOULD_VERIFY_SIGNATURE, "Signature available on license, you should verify the signature"};
     }
-    if (validateSignature && !license->licenseeSignature().empty()) {
+    if (validateSignature && !license->licenseeSignature().empty())
+    {
         std::string decodedLicense = Base16::decode(license->licenseeSignature());
         std::string iv;
         auto ivPos = decodedLicense.find(":");
-        if (ivPos != std::string::npos) {
+        if (ivPos != std::string::npos)
+        {
             iv = decodedLicense.substr(0, ivPos);
         }
         result = result && AES::encrypt(licenseeSignature, masterKey, iv) == decodedLicense;
     }
-    return result;
+    if (result)
+    {
+        return VALIDATE_ERROR{VALIDATE_ERROR_ENUM::LICENSE_IS_VALID, "License is valid"};
+    }
+    else
+    {
+        return VALIDATE_ERROR{VALIDATE_ERROR_ENUM::FAILED_AES_ENCRYPT, "Failed when decoding license"};
+    }
 }
