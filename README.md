@@ -217,5 +217,6 @@ heroku login
 heroku container:login
 heroku create
 heroku container:push web --app <name_of_container>
+heroku container:release web --app <name_of_container>
 heroku open --app <name_of_container>
 ```
