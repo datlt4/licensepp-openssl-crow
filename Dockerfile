@@ -8,20 +8,20 @@ RUN apt update && \
     apt install --assume-yes software-properties-common git cmake g++ zlib* wget libssl1* libssl-dev -y
 
 WORKDIR /root
-RUN git clone https://github.com/LuongTanDat/licensepp-openssl.git
-WORKDIR /root/licensepp-openssl
-RUN cd /root/licensepp-openssl/3rdparty/cryptopp && \
+RUN git clone https://github.com/LuongTanDat/licensepp-openssl-crow.git
+WORKDIR /root/licensepp-openssl-crow
+RUN cd /root/licensepp-openssl-crow/3rdparty/cryptopp && \
     make -j$(nproc) && \
     make install && \
-    cd /root/licensepp-openssl/3rdparty/licensepp && \
+    cd /root/licensepp-openssl-crow/3rdparty/licensepp && \
     mkdir -p build && \
-    cd /root/licensepp-openssl/3rdparty/licensepp/build && \
+    cd /root/licensepp-openssl-crow/3rdparty/licensepp/build && \
     cmake .. && \
     make -j$(nproc) && \
     make install && \
-    cd /root/licensepp-openssl/3rdparty/ripe && \
+    cd /root/licensepp-openssl-crow/3rdparty/ripe && \
     mkdir -p build && \
-    cd /root/licensepp-openssl/3rdparty/ripe/build && \
+    cd /root/licensepp-openssl-crow/3rdparty/ripe/build && \
     cmake .. && \
     make -j$(nproc) && \
     make install
@@ -41,12 +41,12 @@ RUN rm -rf boost_* && \
     echo "export LD_LIBRARY_PATH=/usr/local/lib:\$LD_LIBRARY_PATH" | tee -a ~/.bashrc
 
 # Build server
-WORKDIR /root/licensepp-openssl/build
+WORKDIR /root/licensepp-openssl-crow/build
 RUN export LD_LIBRARY_PATH=/usr/local/lib && \
     cmake .. && \
     make -j$(nproc)
 
 # RUN
 EXPOSE 6262
-WORKDIR /root/licensepp-openssl/build
+WORKDIR /root/licensepp-openssl-crow/build
 CMD ["./licensepp-openssl-crow", "6262"]
