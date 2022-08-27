@@ -5919,7 +5919,6 @@ reexecute:
 
         if (parser->flags & F_TRAILING) {
           /* End of a chunked request */
-          parser->state = CROW_NEW_MESSAGE();
           CROW_CALLBACK_NOTIFY(message_complete);
           break;
         }
@@ -5995,14 +5994,12 @@ reexecute:
 
         /* Exit, the rest of the connect is in a different protocol. */
         if (parser->upgrade) {
-          parser->state = CROW_NEW_MESSAGE();
           CROW_CALLBACK_NOTIFY(message_complete);
           parser->nread = nread;
           return (p - data) + 1;
         }
 
         if (parser->flags & F_SKIPBODY) {
-          parser->state = CROW_NEW_MESSAGE();
           CROW_CALLBACK_NOTIFY(message_complete);
         } else if (parser->flags & F_CHUNKED) {
           /* chunked encoding - ignore Content-Length header,
@@ -6042,7 +6039,6 @@ reexecute:
             if (parser->content_length == 0)
             {
                 /* Content-Length header given but zero: Content-Length: 0\r\n */
-                parser->state = CROW_NEW_MESSAGE();
                 CROW_CALLBACK_NOTIFY(message_complete);
             }
             else if (parser->content_length != CROW_ULLONG_MAX)
@@ -6053,7 +6049,6 @@ reexecute:
             else
             {
                 /* Assume content-length 0 - read the next */
-                parser->state = CROW_NEW_MESSAGE();
                 CROW_CALLBACK_NOTIFY(message_complete);
             }
         }
@@ -6105,7 +6100,6 @@ reexecute:
         break;
 
       case s_message_done:
-        parser->state = CROW_NEW_MESSAGE();
         CROW_CALLBACK_NOTIFY(message_complete);
         break;
 
@@ -6350,9 +6344,7 @@ http_parser_set_max_header_size(uint32_t size) {
 #undef CROW_TOKEN
 #undef CROW_IS_URL_CHAR
 //#undef CROW_IS_HOST_CHAR
-#undef CROW_start_state
 #undef CROW_STRICT_CHECK
-#undef CROW_NEW_MESSAGE
 
 }
 }
@@ -6382,10 +6374,8 @@ namespace crow
     template<typename Handler>
     struct HTTPParser : public http_parser
     {
-        static int on_message_begin(http_parser* self_)
+        static int on_message_begin(http_parser*)
         {
-            HTTPParser* self = static_cast<HTTPParser*>(self_);
-            self->clear();
             return 0;
         }
         static int on_url(http_parser* self_, const char* at, size_t length)
@@ -6450,7 +6440,8 @@ namespace crow
         static int on_message_complete(http_parser* self_)
         {
             HTTPParser* self = static_cast<HTTPParser*>(self_);
-
+           
+            self->message_complete = true;
             // url params
             self->url = self->raw_url.substr(0, self->qs_point != 0 ? self->qs_point : std::string::npos);
             self->url_params = query_string(self->raw_url);
@@ -6468,6 +6459,9 @@ namespace crow
         /// Parse a buffer into the different sections of an HTTP request.
         bool feed(const char* buffer, int length)
         {
+            if (message_complete)
+                return true;
+
             const static http_parser_settings settings_{
               on_message_begin,
               on_url,
@@ -6504,6 +6498,8 @@ namespace crow
             qs_point = 0;
             http_major = 0;
             http_minor = 0;
+            message_complete = false;
+            state = CROW_NEW_MESSAGE();
             keep_alive = false;
             close_connection = false;
         }
@@ -6543,6 +6539,7 @@ namespace crow
         std::string url;
 
         int header_building_state = 0;
+        bool message_complete = false;
         std::string header_field;
         std::string header_value;
         ci_map headers;
@@ -6554,6 +6551,9 @@ namespace crow
         Handler* handler_; ///< This is currently an HTTP connection object (\ref crow.Connection).
     };
 } // namespace crow
+
+#undef CROW_NEW_MESSAGE
+#undef CROW_start_state
 
 
 
@@ -11278,6 +11278,7 @@ namespace crow
                 if (!ec)
                 {
                     start_deadline();
+                    parser_.clear();
 
                     do_read();
                 }
@@ -11322,7 +11323,7 @@ namespace crow
                     is_invalid_request = true;
                     res = response(400);
                 }
-                if (req.upgrade)
+                else if (req.upgrade)
                 {
                     // h2 or h2c headers
                     if (req.get_header_value("upgrade").substr(0, 2) == "h2")
@@ -11570,12 +11571,14 @@ namespace crow
             if (res.file_info.statResult == 0)
             {
                 std::ifstream is(res.file_info.path.c_str(), std::ios::in | std::ios::binary);
+                std::vector<boost::asio::const_buffer> buffers{1};
                 char buf[16384];
-                while (is.read(buf, sizeof(buf)).gcount() > 0)
+                is.read(buf, sizeof(buf));
+                while (is.gcount() > 0)
                 {
-                    std::vector<asio::const_buffer> buffers;
-                    buffers.push_back(boost::asio::buffer(buf));
+                    buffers[0] = boost::asio::buffer(buf, is.gcount());
                     do_write_sync(buffers);
+                    is.read(buf, sizeof(buf));
                 }
             }
             is_writing = false;
@@ -11590,6 +11593,7 @@ namespace crow
             res.end();
             res.clear();
             buffers_.clear();
+            parser_.clear();
         }
 
         void do_write_general()
@@ -11647,6 +11651,7 @@ namespace crow
                 res.end();
                 res.clear();
                 buffers_.clear();
+                parser_.clear();
             }
         }
 
@@ -11708,6 +11713,7 @@ namespace crow
                   is_writing = false;
                   res.clear();
                   res_body_copy_.clear();
+                  parser_.clear();
                   if (!ec)
                   {
                       if (close_connection_)
