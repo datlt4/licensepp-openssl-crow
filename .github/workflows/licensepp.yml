@@ -1,0 +1,219 @@
+name: CICD
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the main branch
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+
+env:
+  LICENCEPP_OPENSSL_CROW_VESION: v1.1-cicd
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # The "build-native" job
+  build-native:
+    runs-on: ubuntu-latest
+    steps:
+      - name: remove old app on my local PC
+        uses: appleboy/ssh-action@master
+        with:
+          # IP
+          host: ${{ secrets.SSH_HOST }}
+          # VPS username
+          username: ${{ secrets.SSH_USERNAME }}
+          # SSH key (copy it from ~/.ssh/id_rsa)
+          key: ${{ secrets.SSH_KEY }}
+          # SSH port
+          port: ${{ secrets.SSH_PORT }}
+          # passphrase
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          script: |
+            cd /home/${{ secrets.SSH_USERNAME }}/Downloads/Miscellaneous/licensepp-openssl-crow/build
+            rm -rf CMakeCache.txt
+      - name: build app on my local PC
+        uses: appleboy/ssh-action@master
+        with:
+          # IP
+          host: ${{ secrets.SSH_HOST }}
+          # VPS username
+          username: ${{ secrets.SSH_USERNAME }}
+          # SSH key (copy it from ~/.ssh/id_rsa)
+          key: ${{ secrets.SSH_KEY }}
+          # SSH port
+          port: ${{ secrets.SSH_PORT }}
+          # passphrase
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          script: |
+            cd /home/${{ secrets.SSH_USERNAME }}/Downloads/Miscellaneous/licensepp-openssl-crow/build
+            /usr/local/bin/cmake ..
+            make -j$(nproc)
+
+  # The "build-docker-amd64" job
+  build-docker-amd64:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    needs: [build-native]
+    steps:
+      - name: build docker image
+        timeout-minutes: 250
+        uses: appleboy/ssh-action@master
+        with:
+          # IP
+          host: ${{ secrets.SSH_HOST }}
+          # VPS username
+          username: ${{ secrets.SSH_USERNAME }}
+          # SSH key (copy it from ~/.ssh/id_rsa)
+          key: ${{ secrets.SSH_KEY }}
+          # SSH port
+          port: ${{ secrets.SSH_PORT }}
+          # passphrase
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          # timeout
+          command_timeout: 250m
+          script: |
+            cd /home/${{ secrets.SSH_USERNAME }}/Downloads/Miscellaneous/licensepp-openssl-crow
+            docker buildx build --platform linux/amd64 --no-cache -t hienanh/licensepp-openssl-crow:${{ env.LICENCEPP_OPENSSL_CROW_VESION }}-amd64 --push . -f Dockerfile
+
+  # The "build-docker-armv7" job
+  build-docker-armv7:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    needs: [build-native]
+    steps:
+      - name: build docker image
+        timeout-minutes: 250
+        uses: appleboy/ssh-action@master
+        with:
+          # IP
+          host: ${{ secrets.SSH_HOST_ARMV7 }}
+          # VPS username
+          username: ${{ secrets.SSH_USERNAME_ARMV7 }}
+          # SSH key (copy it from ~/.ssh/id_rsa)
+          key: ${{ secrets.SSH_KEY_ARMV7 }}
+          # SSH port
+          port: ${{ secrets.SSH_PORT_ARMV7 }}
+          # passphrase
+          passphrase: ${{ secrets.SSH_PASSPHRASE_ARMV7 }}
+          # timeout
+          command_timeout: 250m
+          script: |
+            cd /home/${{ secrets.SSH_USERNAME_ARMV7 }}/Downloads/licensepp
+            docker buildx build --platform linux/arm/v7 --no-cache -t hienanh/licensepp-openssl-crow:${{ env.LICENCEPP_OPENSSL_CROW_VESION }}-armv7 --push . -f Dockerfile
+
+  # The "build-docker-armv8" job
+  build-docker-armv8:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    needs: [build-native]
+    steps:
+      - name: build docker image
+        timeout-minutes: 250
+        uses: appleboy/ssh-action@master
+        with:
+          # IP
+          host: ${{ secrets.SSH_HOST_ARMV8 }}
+          # VPS username
+          username: ${{ secrets.SSH_USERNAME_ARMV8 }}
+          # SSH key (copy it from ~/.ssh/id_rsa)
+          key: ${{ secrets.SSH_KEY_ARMV8 }}
+          # SSH port
+          port: ${{ secrets.SSH_PORT_ARMV8 }}
+          # passphrase
+          passphrase: ${{ secrets.SSH_PASSPHRASE_ARMV8 }}
+          # timeout
+          command_timeout: 250m
+          script: |
+            cd /home/${{ secrets.SSH_USERNAME_ARMV8 }}/Downloads/licensepp
+            docker buildx build --platform linux/arm64 --no-cache -t hienanh/licensepp-openssl-crow:${{ env.LICENCEPP_OPENSSL_CROW_VESION }}-arm64 --push . -f Dockerfile
+
+  # The "create-manifest" job
+  create-manifest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    needs: [build-docker-amd64, build-docker-armv7, build-docker-armv8]
+    steps:
+      - name: create manifet
+        timeout-minutes: 85
+        uses: appleboy/ssh-action@master
+        with:
+          # IP
+          host: ${{ secrets.SSH_HOST }}
+          # VPS username
+          username: ${{ secrets.SSH_USERNAME }}
+          # SSH key (copy it from ~/.ssh/id_rsa)
+          key: ${{ secrets.SSH_KEY }}
+          # SSH port
+          port: ${{ secrets.SSH_PORT }}
+          # passphrase
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          # timeout
+          command_timeout: 85m
+          script: |
+            docker pull hienanh/licensepp-openssl-crow:${{ env.LICENCEPP_OPENSSL_CROW_VESION }}-amd64
+            docker pull hienanh/licensepp-openssl-crow:${{ env.LICENCEPP_OPENSSL_CROW_VESION }}-arm64
+            docker pull hienanh/licensepp-openssl-crow:${{ env.LICENCEPP_OPENSSL_CROW_VESION }}-armv7
+            docker manifest create hienanh/licensepp-openssl-crow:${{ env.LICENCEPP_OPENSSL_CROW_VESION }} --amend hienanh/licensepp-openssl-crow:${{ env.LICENCEPP_OPENSSL_CROW_VESION }}-amd64 --amend hienanh/licensepp-openssl-crow:${{ env.LICENCEPP_OPENSSL_CROW_VESION }}-arm64 --amend hienanh/licensepp-openssl-crow:${{ env.LICENCEPP_OPENSSL_CROW_VESION }}-armv7
+            docker manifest push hienanh/licensepp-openssl-crow:${{ env.LICENCEPP_OPENSSL_CROW_VESION }}
+            docker rmi -f hienanh/licensepp-openssl-crow:${{ env.LICENCEPP_OPENSSL_CROW_VESION }}-amd64
+            docker rmi -f hienanh/licensepp-openssl-crow:${{ env.LICENCEPP_OPENSSL_CROW_VESION }}-arm64
+            docker rmi -f hienanh/licensepp-openssl-crow:${{ env.LICENCEPP_OPENSSL_CROW_VESION }}-armv7
+            docker pull hienanh/licensepp-openssl-crow:${{ env.LICENCEPP_OPENSSL_CROW_VESION }}
+
+  # The "pull-manifest-armv7" job
+  pull-manifest-armv7:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [create-manifest]
+    steps:
+      - name: build docker image
+        timeout-minutes: 27
+        uses: appleboy/ssh-action@master
+        with:
+          # IP
+          host: ${{ secrets.SSH_HOST_ARMV7 }}
+          # VPS username
+          username: ${{ secrets.SSH_USERNAME_ARMV7 }}
+          # SSH key (copy it from ~/.ssh/id_rsa)
+          key: ${{ secrets.SSH_KEY_ARMV7 }}
+          # SSH port
+          port: ${{ secrets.SSH_PORT_ARMV7 }}
+          # passphrase
+          passphrase: ${{ secrets.SSH_PASSPHRASE_ARMV7 }}
+          # timeout
+          command_timeout: 27m
+          script: |
+            docker rmi -f hienanh/licensepp-openssl-crow:${{ env.LICENCEPP_OPENSSL_CROW_VESION }}-armv7
+            docker pull hienanh/licensepp-openssl-crow:${{ env.LICENCEPP_OPENSSL_CROW_VESION }}
+
+  # The "pull-manifest-armv8" job
+  pull-manifest-armv8:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [create-manifest]
+    steps:
+      - name: build docker image
+        timeout-minutes: 27
+        uses: appleboy/ssh-action@master
+        with:
+          # IP
+          host: ${{ secrets.SSH_HOST_ARMV8 }}
+          # VPS username
+          username: ${{ secrets.SSH_USERNAME_ARMV8 }}
+          # SSH key (copy it from ~/.ssh/id_rsa)
+          key: ${{ secrets.SSH_KEY_ARMV8 }}
+          # SSH port
+          port: ${{ secrets.SSH_PORT_ARMV8 }}
+          # passphrase
+          passphrase: ${{ secrets.SSH_PASSPHRASE_ARMV8 }}
+          # timeout
+          command_timeout: 27m
+          script: |
+            docker rmi -f hienanh/licensepp-openssl-crow:${{ env.LICENCEPP_OPENSSL_CROW_VESION }}-arm64
+            docker pull hienanh/licensepp-openssl-crow:${{ env.LICENCEPP_OPENSSL_CROW_VESION }}
