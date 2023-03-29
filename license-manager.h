@@ -357,7 +357,7 @@ struct pipeline_data
 
     void save(std::string &filename)
     {
-        this->save(filename.c_str());
+        this->save(const_cast<char *>(filename.c_str()));
     }
 
     void save(char *filename)
@@ -370,7 +370,7 @@ struct pipeline_data
 
     void save_all(std::string &filename)
     {
-        this->save_all(filename.c_str());
+        this->save_all(const_cast<char *>(filename.c_str()));
     }
 
     void save_all(char *filename)
@@ -383,7 +383,7 @@ struct pipeline_data
 
     void load(std::string &filename, bool clear_data = false)
     {
-        this->load(filename.c_str(), clear_data);
+        this->load(const_cast<char *>(filename.c_str()), clear_data);
     }
 
     void load(char *filename, bool clear_data = false)
