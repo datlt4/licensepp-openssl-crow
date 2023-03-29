@@ -1,0 +1,44 @@
+# To use:
+#
+#     pre-commit run -a
+#
+# Or:
+#
+#     pre-commit install  # (runs every time you commit in git)
+#
+# To update this file:
+#
+#     pre-commit autoupdate
+#
+# See https://github.com/pre-commit/pre-commit
+
+# Changes tabs to spaces
+repos:
+- repo: https://github.com/Lucas-C/pre-commit-hooks
+  rev: "v1.4.2"
+  hooks:
+  - id: remove-tabs
+    exclude: "^(3rdparty/|crow_all.h)"
+
+# CMake formatting
+- repo: https://github.com/cheshirekow/cmake-format-precommit
+  rev: "v0.6.13"
+  hooks:
+  - id: cmake-format
+    additional_dependencies: [pyyaml]
+    types: [file]
+    #files: (\.cmake|CMakeLists.txt)(.in)?$
+    files: (CMakeLists.txt)(.in)?$
+    exclude: "^3rdparty/"
+
+# Clang format the codebase automatically
+- repo: https://github.com/pre-commit/mirrors-clang-format
+  rev: "v16.0.0"
+  hooks:
+  - id: clang-format
+    name: clang-format
+    exclude: "^(3rdparty/|crow_all.h)"
+    description: Format C++ code with clang-format
+    files: '\.(c|cc|cpp|cxx|cu|h|hh|hpp|hxx|inl|inc|ipp|m|mm)$'
+    #args: [--style=microsoft]
+    args: [--style=file]

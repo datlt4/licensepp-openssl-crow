@@ -1,0 +1,21 @@
+# Ignore build artifacts
+build/
+dist/
+__pycache__/
+*.pyc
+*.egg-info/
+*.egg
+
+# Ignore CMake and Visual Studio build directories
+CMakeFiles/
+cmake-build-*/
+
+# Ignore compiled binary files
+*.so
+*.pyd
+*.dll
+
+# Ignore system and editor files
+.DS_Store
+.idea/
+.vscode/

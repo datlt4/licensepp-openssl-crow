@@ -42,7 +42,8 @@ void P_LIC::getAuthorityIdSecret(std::string &Id, P_LIC::licenseInfo &lInfo)
 }
 
 /**
- * @brief Encypt data from a file stream, this function is equivalent below command: openssl enc -aes-256-cbc -md sha256 -pbkdf2 -iter <ENC_ITER> -k <ENC_PASS> -in <input-filename> -out <output-filename>
+ * @brief Encypt data from a file stream, this function is equivalent below command: openssl enc -aes-256-cbc -md sha256
+ * -pbkdf2 -iter <ENC_ITER> -k <ENC_PASS> -in <input-filename> -out <output-filename>
  *
  * @param ifp
  * @param ofp
@@ -296,12 +297,17 @@ void P_LIC::showLicenseInfo(licensepp::License &license)
 {
     std::cout << "[ ID ]: " << license.issuingAuthorityId() << std::endl;
     std::cout << "\t" << std::left << std::setw(25) << "[ licensee ]:" << license.licensee() << std::endl;
-    std::cout << "\t" << std::left << std::setw(25) << "[ issuingAuthorityId ]:" << license.issuingAuthorityId() << std::endl;
-    std::cout << "\t" << std::left << std::setw(25) << "[ licenseeSignature ]:" << license.licenseeSignature() << std::endl;
-    std::cout << "\t" << std::left << std::setw(25) << "[ authoritySignature ]:" << license.authoritySignature() << std::endl;
-    std::cout << "\t" << std::left << std::setw(25) << "[ expiryDate ]:" << license.expiryDate() << " ~ " << license.formattedExpiry() << std::endl;
+    std::cout << "\t" << std::left << std::setw(25) << "[ issuingAuthorityId ]:" << license.issuingAuthorityId()
+              << std::endl;
+    std::cout << "\t" << std::left << std::setw(25) << "[ licenseeSignature ]:" << license.licenseeSignature()
+              << std::endl;
+    std::cout << "\t" << std::left << std::setw(25) << "[ authoritySignature ]:" << license.authoritySignature()
+              << std::endl;
+    std::cout << "\t" << std::left << std::setw(25) << "[ expiryDate ]:" << license.expiryDate() << " ~ "
+              << license.formattedExpiry() << std::endl;
     std::cout << "\t" << std::left << std::setw(25) << "[ issueDate ]:" << license.issueDate() << std::endl;
-    std::cout << "\t" << std::left << std::setw(25) << "[ additionalPayload ]:" << license.additionalPayload() << std::endl;
+    std::cout << "\t" << std::left << std::setw(25) << "[ additionalPayload ]:" << license.additionalPayload()
+              << std::endl;
     std::cout << "\t" << std::left << std::setw(25) << "[ rawJson ]:" << license.raw() << std::endl;
 }
 
@@ -325,7 +331,8 @@ bool P_LIC::issuing(licenseInfo &lInfo, licensepp::License &license)
         return false;
     }
     LicenseManager licenseManager;
-    license = licenseManager.issue(lInfo.licensee, lInfo.period, issuingAuthority, lInfo.secret, lInfo.licenseeSignature, lInfo.additionalPayload);
+    license = licenseManager.issue(lInfo.licensee, lInfo.period, issuingAuthority, lInfo.secret,
+                                   lInfo.licenseeSignature, lInfo.additionalPayload);
     return true;
 }
 
