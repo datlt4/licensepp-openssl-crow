@@ -153,26 +153,26 @@ curl -X POST \
     -F enc_pass=9jIY876UJHGuY576tGJU76TUjhg \
     -F enc_iter=280622 \
     -F authorityId=c1 \
-    http://127.0.0.1:6262/license/lic -o c5.enc
+    http://127.0.0.1:6262/license/lic -o c5.lic
 
 # minimum command
 curl -X POST \
     -F serial=10932847102398 \
-    http://127.0.0.1:6262/license/lic -o c5.enc
+    http://127.0.0.1:6262/license/lic -o c5.lic
 ```
 
 ## Validate license
 
 ```bash
 curl -X POST \
-    -F file=@c5.enc \
+    -F file=@c5.lic \
     -F enc_pass=9jIY876UJHGuY576tGJU76TUjhg \
     -F enc_iter=280622 \
     http://127.0.0.1:6262/validate | python -m json.tool
 
 # minimum command
 curl -X POST \
-    -F file=@c5.enc \
+    -F file=@c5.lic \
     http://127.0.0.1:6262/validate | python -m json.tool
 ```
 

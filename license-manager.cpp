@@ -429,6 +429,5 @@ licensepp::VALIDATE_ERROR P_LIC::validate(P_DATA &idata, licensepp::License &lic
     idata.m_write((void *)"\0", 1);
     license.load(std::string((char *)idata.ptr));
     // showLicenseInfo(license);
-    std::string message;
     return licenseManager.validate(&license, true, LICENSEE_SIGNATURE);
 }

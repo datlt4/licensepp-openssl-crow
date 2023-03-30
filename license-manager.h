@@ -38,7 +38,7 @@
 
 #ifndef TAGLINE
 #define TAGLINE                                                                                                        \
-    "\t <File:" << __FUNCTION__ << ">"                                                                                 \
+    "\t <Func:" << __FUNCTION__ << ">"                                                                                 \
                 << "<L" << __LINE__ << "> "
 #endif // TAGLINE
 namespace P_LIC
@@ -279,6 +279,10 @@ class LicenseManager : public licensepp::BaseLicenseManager<LicenseKeysRegister>
     LicenseManager() : BaseLicenseManager()
     {
     }
+    ~LicenseManager()
+    {
+        std::cout << TAGLINE << std::endl;
+    }
 };
 
 /**
@@ -302,6 +306,7 @@ struct pipeline_data
     ~pipeline_data()
     {
         this->clear();
+        std::cout << TAGLINE << std::endl;
     }
 
     // Copy constructor
@@ -319,13 +324,12 @@ struct pipeline_data
         if (this->ptr != nullptr)
         {
             free(this->ptr);
+            this->ptr = nullptr;
         }
     }
 
     size_t m_write(void *src, size_t num, bool clear_data = false)
     {
-        if (clear_data)
-            this->clear();
         std::lock_guard<std::mutex> lock(m_mutex);
         if (this->ptr == nullptr)
         {
@@ -391,16 +395,23 @@ struct pipeline_data
         const unsigned BUFSIZE = 4096;
         T *read_buf = (T *)malloc(BUFSIZE * sizeof(T));
         FILE *fIN = fopen(filename, "rb");
+        if (clear_data)
+            this->clear();
+
         while (1)
         {
             int numRead = fread(read_buf, sizeof(T), BUFSIZE, fIN);
-            this->m_write((void *)read_buf, numRead * sizeof(T), clear_data);
+            this->m_write((void *)read_buf, numRead * sizeof(T), false);
             if (numRead < BUFSIZE)
             { // EOF
                 break;
             }
         }
-        free(read_buf);
+        if (read_buf != nullptr)
+        {
+            free(read_buf);
+            read_buf = nullptr;
+        }
     }
 
     // Overloaded assignment
