@@ -12,7 +12,7 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                    "raw": "http://127.0.0.1:6262/",
+                    "raw": "http://127.0.0.1:6464/",
                     "protocol": "http",
                     "host": [
                         "127",
@@ -20,7 +20,7 @@
                         "0",
                         "1"
                     ],
-                    "port": "6262",
+                    "port": "6464",
                     "path": [
                         ""
                     ]
@@ -41,7 +41,7 @@
                     "formdata": []
                 },
                 "url": {
-                    "raw": "http://127.0.0.1:6262/license/lic?serial=10932847102398&period=87600&licensee=EMoi&authorityId=c1",
+                    "raw": "http://127.0.0.1:6464/license/lic?serial=10932847102398&period=87600&licensee=EMoi&authorityId=c1",
                     "protocol": "http",
                     "host": [
                         "127",
@@ -49,7 +49,7 @@
                         "0",
                         "1"
                     ],
-                    "port": "6262",
+                    "port": "6464",
                     "path": [
                         "license",
                         "lic"
@@ -123,7 +123,7 @@
                     ]
                 },
                 "url": {
-                    "raw": "http://127.0.0.1:6262/license/lic",
+                    "raw": "http://127.0.0.1:6464/license/lic",
                     "protocol": "http",
                     "host": [
                         "127",
@@ -131,7 +131,7 @@
                         "0",
                         "1"
                     ],
-                    "port": "6262",
+                    "port": "6464",
                     "path": [
                         "license",
                         "lic"
@@ -166,7 +166,7 @@
                     ]
                 },
                 "url": {
-                    "raw": "http://127.0.0.1:6262/validate",
+                    "raw": "http://127.0.0.1:6464/validate",
                     "protocol": "http",
                     "host": [
                         "127",
@@ -174,7 +174,7 @@
                         "0",
                         "1"
                     ],
-                    "port": "6262",
+                    "port": "6464",
                     "path": [
                         "validate"
                     ]
@@ -208,7 +208,7 @@
                     ]
                 },
                 "url": {
-                    "raw": "http://127.0.0.1:6262/encrypt",
+                    "raw": "http://127.0.0.1:6464/encrypt",
                     "protocol": "http",
                     "host": [
                         "127",
@@ -216,7 +216,7 @@
                         "0",
                         "1"
                     ],
-                    "port": "6262",
+                    "port": "6464",
                     "path": [
                         "encrypt"
                     ]
@@ -250,7 +250,7 @@
                     ]
                 },
                 "url": {
-                    "raw": "http://127.0.0.1:6262/decrypt",
+                    "raw": "http://127.0.0.1:6464/decrypt",
                     "protocol": "http",
                     "host": [
                         "127",
@@ -258,7 +258,7 @@
                         "0",
                         "1"
                     ],
-                    "port": "6262",
+                    "port": "6464",
                     "path": [
                         "decrypt"
                     ]
