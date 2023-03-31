@@ -351,7 +351,7 @@ struct pipeline_data
         if (_from < this->size)
         {
             size_t _num = ((_from + num) < this->size) ? num : (this->size - _from);
-            memcpy(dst, (T *)(this->ptr + this->read), _num);
+            memcpy(dst, (T *)(this->ptr + _from), _num);
             this->read = _from + _num;
             return _num;
         }
