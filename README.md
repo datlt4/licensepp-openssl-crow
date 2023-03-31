@@ -132,7 +132,7 @@ else
 
 ```bash
 cmake .. && make -j$(nproc)
-./licensepp-openssl 6262
+./licensepp-openssl 6464
 ```
 
 ## Issuing license
@@ -140,7 +140,7 @@ cmake .. && make -j$(nproc)
 - **_Generate raw license file_**
 
 ```bash
-curl "http://127.0.0.1:6262/license/lic?serial=10932847102398&period=87600&licensee=EMoi&authorityId=c1" -o lic
+curl "http://127.0.0.1:6464/license/lic?serial=10932847102398&period=87600&licensee=EMoi&authorityId=c1" -o lic
 ```
 
 - **_Generate encrytped license file_**
@@ -153,12 +153,12 @@ curl -X POST \
     -F enc_pass=9jIY876UJHGuY576tGJU76TUjhg \
     -F enc_iter=280622 \
     -F authorityId=c1 \
-    http://127.0.0.1:6262/license/lic -o c5.lic
+    http://127.0.0.1:6464/license/lic -o c5.lic
 
 # minimum command
 curl -X POST \
     -F serial=10932847102398 \
-    http://127.0.0.1:6262/license/lic -o c5.lic
+    http://127.0.0.1:6464/license/lic -o c5.lic
 ```
 
 ## Validate license
@@ -168,12 +168,12 @@ curl -X POST \
     -F file=@c5.lic \
     -F enc_pass=9jIY876UJHGuY576tGJU76TUjhg \
     -F enc_iter=280622 \
-    http://127.0.0.1:6262/validate | python -m json.tool
+    http://127.0.0.1:6464/validate | python -m json.tool
 
 # minimum command
 curl -X POST \
     -F file=@c5.lic \
-    http://127.0.0.1:6262/validate | python -m json.tool
+    http://127.0.0.1:6464/validate | python -m json.tool
 ```
 
 ## Encrypt file
@@ -183,12 +183,12 @@ curl -X POST \
     -F file=@c5.lic \
     -F enc_pass=9jIY876UJHGuY576tGJU76TUjhg \
     -F enc_iter=280622 \
-    http://127.0.0.1:6262/encrypt -o c5.enc
+    http://127.0.0.1:6464/encrypt -o c5.enc
 
 # minimum command
 curl -X POST \
     -F file=@c5.lic \
-    http://127.0.0.1:6262/encrypt -o c5.enc
+    http://127.0.0.1:6464/encrypt -o c5.enc
 ```
 
 ## Decrypt file
@@ -198,12 +198,12 @@ curl -X POST \
     -F file=@c5.enc \
     -F enc_pass=9jIY876UJHGuY576tGJU76TUjhg \
     -F enc_iter=280622 \
-    http://127.0.0.1:6262/decrypt -o c5.dec
+    http://127.0.0.1:6464/decrypt -o c5.dec
 
 # minimum command
 curl -X POST \
     -F file=@c5.enc \
-    http://127.0.0.1:6262/decrypt -o c5.dec
+    http://127.0.0.1:6464/decrypt -o c5.dec
 ```
 
 ## Dockerhub
